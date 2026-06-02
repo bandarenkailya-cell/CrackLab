@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>CrackLab — Анализ трещин</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root[data-theme="dark"]{
+  --bg:#0d1117;--surface:#161b24;--surface2:#1c2333;--surface3:#222d3f;
+  --border:#30394f;--border2:#3d4f6a;
+  --accent:#58a6ff;--acc-h:#79b8ff;--acc2:#ff7b72;--acc3:#3fb950;--acc4:#e3b341;--acc5:#d2a8ff;
+  --text:#e6edf3;--text-dim:#8b949e;--text-lt:#6e7681;
+  --img-bg:#090c12;--shadow:0 2px 8px rgba(0,0,0,.45);--shadow-sm:0 1px 3px rgba(0,0,0,.4);
+}
+:root[data-theme="light"]{
+  --bg:#f0f3f8;--surface:#fff;--surface2:#f4f6fa;--surface3:#eaeff7;
+  --border:#d0d7e3;--border2:#b0bbcc;
+  --accent:#1a65c8;--acc-h:#1450a0;--acc2:#c0392b;--acc3:#1a7a3a;--acc4:#b07d00;--acc5:#7c3aed;
+  --text:#0d1117;--text-dim:#3a4455;--text-lt:#64748b;
+  --img-bg:#d8dde8;--shadow:0 2px 8px rgba(30,40,80,.10);--shadow-sm:0 1px 3px rgba(30,40,80,.09);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Manrope',sans-serif;min-height:100vh;overflow:hidden;font-size:13px;transition:background .2s,color .2s;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--surface);box-shadow:var(--shadow-sm);}
+.logo{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--accent);}
+.sub{font-size:0.71rem;color:var(--text-lt);}
+.theme-btn{margin-left:auto;padding:5px 12px;border-radius:5px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.74rem;font-weight:700;cursor:pointer;transition:all .18s;}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent);}
+.layout{display:grid;grid-template-columns:296px 1fr 312px;height:calc(100vh - 47px);overflow:hidden;}
+.left-panel,.right-panel{background:var(--surface);overflow-y:auto;display:flex;flex-direction:column;}
+.left-panel{border-right:1px solid var(--border);}
+.right-panel{border-left:1px solid var(--border);}
+.psec{padding:12px 14px;border-bottom:1px solid var(--border);}
+.psec h3{font-size:0.61rem;text-transform:uppercase;letter-spacing:.13em;color:var(--text-lt);margin-bottom:8px;font-weight:700;}
+label{display:block;font-size:0.73rem;color:var(--text-dim);margin-bottom:3px;margin-top:8px;font-weight:600;}
+label:first-of-type{margin-top:0;}
+input[type=number],input[type=file]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:0.81rem;padding:6px 9px;outline:none;transition:border-color .18s,box-shadow .18s;}
+input[type=number]:focus,input[type=file]:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent);}
+input[type=file]{font-family:'Manrope',sans-serif;font-size:0.72rem;cursor:pointer;}
+input[type=file]::file-selector-button{background:var(--accent);color:#fff;border:none;border-radius:4px;padding:4px 9px;cursor:pointer;font-size:0.72rem;margin-right:7px;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:5px;border:none;cursor:pointer;font-family:'Manrope',sans-serif;font-size:0.75rem;font-weight:700;transition:all .15s;line-height:1;}
+.btn-primary{background:var(--accent);color:#fff;width:100%;justify-content:center;}
+.btn-primary:hover{background:var(--acc-h);}
+.btn-danger{background:color-mix(in srgb,var(--acc2) 12%,var(--surface2));color:var(--acc2);border:1px solid color-mix(in srgb,var(--acc2) 30%,var(--border));}
+.btn-danger:hover{background:color-mix(in srgb,var(--acc2) 20%,var(--surface2));}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+.btn-warn{background:color-mix(in srgb,var(--acc4) 12%,var(--surface2));color:var(--acc4);border:1px solid color-mix(in srgb,var(--acc4) 30%,var(--border));}
+.btn-warn:hover{background:color-mix(in srgb,var(--acc4) 20%,var(--surface2));}
+.btn-warn.active{background:var(--acc4);color:#111 !important;}
+.btn-success{background:color-mix(in srgb,var(--acc3) 12%,var(--surface2));color:var(--acc3);border:1px solid color-mix(in srgb,var(--acc3) 30%,var(--border));}
+.btn-success:hover{background:color-mix(in srgb,var(--acc3) 20%,var(--surface2));}
+.btn-purple{background:color-mix(in srgb,var(--acc5) 12%,var(--surface2));color:var(--acc5);border:1px solid color-mix(in srgb,var(--acc5) 30%,var(--border));}
+.btn-purple:hover{background:color-mix(in srgb,var(--acc5) 20%,var(--surface2));}
+.btn-purple.active{background:var(--acc5);color:#fff !important;}
+.btn-cyan{background:color-mix(in srgb,#38bdf8 12%,var(--surface2));color:#38bdf8;border:1px solid color-mix(in srgb,#38bdf8 30%,var(--border));}
+.btn-cyan:hover{background:color-mix(in srgb,#38bdf8 20%,var(--surface2));}
+.btn-cyan.active{background:#0ea5e9;color:#fff !important;}
+.btn-sm{padding:3px 8px;font-size:0.7rem;}
+.btn-full{width:100%;justify-content:center;}
+.btn-row{display:flex;gap:4px;flex-wrap:wrap;}
+/* scol list */
+.scol-group{margin-bottom:4px;}
+.scol-header{display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;cursor:pointer;user-select:none;font-size:0.75rem;font-weight:700;color:var(--text);}
+.scol-header:hover{background:var(--surface3);}
+.scol-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.scol-hide-btn{margin-left:auto;font-size:0.65rem;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--text-lt);cursor:pointer;}
+.scol-hide-btn:hover{border-color:var(--acc2);color:var(--acc2);}
+.scol-cracks{padding:2px 0 2px 10px;}
+.crack-item{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:4px;font-size:0.74rem;transition:background .1s;color:var(--text);}
+.crack-item:hover{background:var(--surface2);}
+.crack-item input[type=checkbox]{accent-color:var(--accent);width:13px;height:13px;flex-shrink:0;}
+.crack-len{font-family:'JetBrains Mono',monospace;color:var(--acc3);font-size:0.75rem;margin-left:auto;font-weight:600;}
+.crack-manual-badge{color:var(--acc4);font-size:0.66rem;}
+/* override badge */
+.override-badge{font-size:0.62rem;padding:1px 5px;border-radius:3px;font-weight:700;}
+.override-manual{background:color-mix(in srgb,var(--acc4) 15%,var(--surface2));color:var(--acc4);}
+.override-auto{background:color-mix(in srgb,var(--acc3) 12%,var(--surface2));color:var(--acc3);}
+/* center */
+.center-panel{background:var(--img-bg);display:flex;flex-direction:column;}
+.img-toolbar{display:flex;align-items:center;gap:5px;padding:7px 10px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+.img-toolbar span{font-size:0.72rem;color:var(--text-dim);}
+.tool-btn{padding:4px 10px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.72rem;cursor:pointer;transition:all .15s;}
+.tool-btn:hover,.tool-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+#imageContainer{flex:1;overflow:hidden;position:relative;}
+#outputImage{position:absolute;top:0;left:0;transform-origin:top left;image-rendering:crisp-edges;user-select:none;display:none;pointer-events:none;}
+#drawCanvas{position:absolute;top:0;left:0;transform-origin:top left;}
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--text-lt);}
+.placeholder svg{opacity:.35;}
+.placeholder p{font-size:0.8rem;}
+/* right */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;}
+.stat-label{font-size:0.62rem;color:var(--text-lt);text-transform:uppercase;letter-spacing:.09em;font-weight:700;}
+.stat-value{font-family:'JetBrains Mono',monospace;font-size:0.96rem;font-weight:700;margin-top:2px;color:var(--text);}
+.stat-unit{font-size:0.63rem;color:var(--text-dim);margin-left:2px;font-weight:400;}
+.stat-full{grid-column:1/-1;}
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);}
+.tab{flex:1;padding:8px 4px;text-align:center;font-size:0.71rem;font-weight:700;cursor:pointer;color:var(--text-dim);border-bottom:2px solid transparent;transition:all .15s;user-select:none;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.props-table{width:100%;font-size:0.77rem;border-collapse:collapse;}
+.props-table td{padding:5px 3px;border-bottom:1px solid var(--border);color:var(--text);}
+.props-table tr:last-child td{border-bottom:none;}
+.props-table td:first-child{color:var(--text-dim);font-weight:500;}
+.props-table td:last-child{font-family:'JetBrains Mono',monospace;color:var(--accent);text-align:right;font-weight:700;}
+.scol-detail{border:1px solid var(--border);border-radius:6px;margin-bottom:6px;overflow:hidden;}
+.scol-detail-hdr{display:flex;align-items:center;gap:7px;padding:7px 10px;cursor:pointer;background:var(--surface2);font-size:0.75rem;font-weight:700;color:var(--text);}
+.scol-detail-hdr:hover{background:var(--surface3);}
+.scol-detail-body{padding:10px 12px;display:none;background:var(--surface);}
+.scol-detail-body.open{display:block;}
+.chart-wrap{position:relative;width:100%;height:138px;}
+.mc-table{width:100%;border-collapse:collapse;font-size:0.72rem;}
+.mc-table th{text-align:left;color:var(--text-lt);font-size:0.61rem;padding:3px 3px 5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;}
+.mc-table th:not(:first-child){text-align:right;}
+.mc-table td{padding:4px 3px;border-bottom:1px solid var(--border);color:var(--text-dim);}
+.mc-table tr:last-child td{border-bottom:none;}
+.mc-table td:nth-child(2){font-family:'JetBrains Mono',monospace;color:var(--accent);text-align:right;font-weight:700;}
+.mc-table td:nth-child(3){font-family:'JetBrains Mono',monospace;color:var(--text-dim);text-align:right;font-size:0.67rem;}
+.badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:0.64rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.badge-blue{background:color-mix(in srgb,var(--accent) 18%,var(--surface2));color:var(--accent);}
+.badge-green{background:color-mix(in srgb,var(--acc3) 18%,var(--surface2));color:var(--acc3);}
+.info-tip{display:inline-block;width:14px;height:14px;border-radius:50%;background:color-mix(in srgb,var(--accent) 18%,var(--surface2));color:var(--accent);text-align:center;font-size:0.62rem;font-weight:700;cursor:help;line-height:14px;margin-left:3px;vertical-align:middle;}
+.draw-hint{font-size:0.69rem;color:var(--text-lt);margin-bottom:5px;line-height:1.5;background:var(--surface2);border-radius:4px;padding:5px 7px;border:1px solid var(--border);}
+#loadingOverlay{display:none;position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 82%,transparent);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:12px;backdrop-filter:blur(3px);}
+#loadingOverlay.show{display:flex;}
+.spinner{width:30px;height:30px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loadingOverlay p{font-size:0.8rem;color:var(--text-dim);font-weight:600;}
+.error-msg{background:color-mix(in srgb,var(--acc2) 12%,var(--surface2));border:1px solid color-mix(in srgb,var(--acc2) 35%,var(--border));border-radius:5px;padding:8px 10px;font-size:0.74rem;color:var(--acc2);margin-top:7px;}
+.mode-bar{display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--surface3);border-bottom:1px solid var(--border);font-size:0.72rem;color:var(--text-dim);flex-shrink:0;}
+.mode-bar strong{color:var(--acc4);margin-left:4px;}
+.sep{height:1px;background:var(--border);margin:7px 0;}
+</style>
+</head>
+<body>
+<div id="loadingOverlay"><div class="spinner"></div><p id="loadingMsg">Анализ...</p></div>
+
+<header>
+  <div><div class="logo">⬡ CrackLab</div><div class="sub">Анализ трещин индентирования · Монте-Карло</div></div>
+  <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">☀ Светлая</button>
+</header>
+
+<div class="layout">
+<!-- ═══ LEFT ═══ -->
+<div class="left-panel">
+  <div class="psec">
+    <h3>Параметры анализа</h3>
+    <label>Изображение</label>
+    <input type="file" id="fileInput" accept="image/*">
+    <label>Длина стороны крестика (мкм)</label>
+    <input type="number" id="crossSize" value="25" step="any">
+    <label>Нагрузка на индентор P (Н)</label>
+    <input type="number" id="loadP" value="0.98" step="any">
+    <label>Мин. площадь области (пкс²)</label>
+    <input type="number" id="minArea" value="200" step="any">
+    <div style="margin-top:10px"><button class="btn btn-primary btn-full" onclick="send()">▶ Рассчитать</button></div>
+    <div id="errorBox" style="display:none"></div>
+  </div>
+
+  <div class="psec" id="crackListSection" style="display:none">
+    <h3>Трещины по сколам</h3>
+    <div class="btn-row" style="margin-bottom:7px">
+      <button class="btn btn-secondary btn-sm" onclick="selectAll()">Все ✓</button>
+      <button class="btn btn-secondary btn-sm" onclick="deselectAll()">Снять</button>
+      <button class="btn btn-danger btn-sm" onclick="removeSelected()">Удалить</button>
+      <button class="btn btn-secondary btn-sm" onclick="toggleEmptyScols()" id="emptyToggleBtn">Пустые</button>
+    </div>
+    <div id="crackList"></div>
+
+    <div class="sep"></div>
+
+    <!-- DRAW MODE SELECTOR -->
+    <h3 style="margin-bottom:6px">Инструменты рисования</h3>
+    <div class="btn-row" style="margin-bottom:5px">
+      <button class="btn btn-warn btn-sm" id="modeBtn_crack" onclick="setDrawMode('crack')">✏ Трещина</button>
+      <button class="btn btn-cyan btn-sm" id="modeBtn_d" onclick="setDrawMode('d')" title="Нарисовать диагональ отпечатка d для выбранного скола">📐 Диагональ d</button>
+      <button class="btn btn-purple btn-sm" id="modeBtn_diam" onclick="setDrawMode('diam')" title="Нарисовать полный диаметр скола">⊙ Диаметр</button>
+    </div>
+    <!-- scol selector for d/diam -->
+    <div id="scolSelectRow" style="display:none;margin-bottom:5px">
+      <label style="margin-top:0">Для скола:</label>
+      <select id="scolSelect" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:0.8rem;padding:5px 8px;outline:none;">
+        <option value="">— выбрать скол —</option>
+      </select>
+    </div>
+    <div class="btn-row" style="margin-bottom:5px">
+      <button class="btn btn-secondary btn-sm" onclick="undoLastPoint()">↩ Точка</button>
+      <button class="btn btn-success btn-sm" onclick="finishDrawing()" id="finishBtn" style="display:none">✓ Готово</button>
+      <button class="btn btn-danger btn-sm" onclick="clearManual()">✕ Очистить</button>
+    </div>
+    <div class="draw-hint" id="drawHint">Выберите инструмент выше, затем кликайте на изображении.</div>
+    <div id="manualDList"></div>
+  </div>
+</div>
+
+<!-- ═══ CENTER ═══ -->
+<div class="center-panel">
+  <div class="img-toolbar">
+    <span style="font-weight:700;color:var(--text)">Изображение</span>
+    <button class="tool-btn" onclick="zoomIn()">+</button>
+    <button class="tool-btn" onclick="zoomOut()">−</button>
+    <button class="tool-btn" onclick="resetZoom()">⊙ Сброс</button>
+    <span id="zoomLabel">100%</span>
+    <span id="drawStatus" style="margin-left:8px;font-size:0.71rem;color:var(--acc4);font-weight:600"></span>
+  </div>
+  <div id="imageContainer"
+       onmousedown="onMouseDown(event)" onmousemove="onMouseMove(event)"
+       onmouseup="onMouseUp(event)" ondblclick="onDblClick(event)" onwheel="onWheel(event)">
+    <img id="outputImage" draggable="false">
+    <canvas id="drawCanvas"></canvas>
+    <div class="placeholder" id="placeholder">
+      <svg width="52" height="52" viewBox="0 0 64 64" fill="none">
+        <rect x="8" y="8" width="48" height="48" rx="6" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="32" cy="32" r="10" stroke="var(--accent)" stroke-width="2"/>
+        <line x1="32" y1="22" x2="32" y2="16" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="32" y1="48" x2="32" y2="42" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="22" y1="32" x2="16" y2="32" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="48" y1="32" x2="42" y2="32" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <p>Загрузите изображение и нажмите «Рассчитать»</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ RIGHT ═══ -->
+<div class="right-panel">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('global')">Общее</div>
+    <div class="tab" onclick="switchTab('scols')">По сколам</div>
+    <div class="tab" onclick="switchTab('charts')">Графики</div>
+  </div>
+
+  <div class="tab-content active" id="tab-global">
+    <div class="psec">
+      <h3>Измерения</h3>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-label">Трещин</div><div class="stat-value" id="statCount">—</div></div>
+        <div class="stat-box"><div class="stat-label">Средняя L̄</div><div class="stat-value" id="statMean">—<span class="stat-unit">мкм</span></div></div>
+        <div class="stat-box"><div class="stat-label">Ст. откл. σ</div><div class="stat-value" id="statStd">—<span class="stat-unit">мкм</span></div></div>
+        <div class="stat-box"><div class="stat-label">Погрешн. σ/√n <span class="info-tip" title="Насколько точно определено среднее. σ/√n — чем меньше, тем надёжнее.">?</span></div><div class="stat-value" id="statSem">—<span class="stat-unit">мкм</span></div></div>
+        <div class="stat-box stat-full"><div class="stat-label">Мин / Макс</div><div class="stat-value" id="statMinMax" style="font-size:.85rem">—</div></div>
+        <div class="stat-box stat-full"><div class="stat-label">Диам. зоны / диагональ d</div><div class="stat-value" id="statDiam" style="font-size:.85rem">—</div></div>
+      </div>
+    </div>
+    <div class="psec">
+      <h3>Свойства материала</h3>
+      <table class="props-table" id="propsTable">
+        <tr><td>H — микротвёрдость</td><td>—</td></tr>
+        <tr><td>K — коэф. интенс. напряжений</td><td>—</td></tr>
+        <tr><td>G — энергия разрушения</td><td>—</td></tr>
+        <tr><td>Y — удельная энергия</td><td>—</td></tr>
+        <tr><td>h — глубина трещины</td><td>—</td></tr>
+      </table>
+    </div>
+    <div class="psec">
+      <h3>Монте-Карло (N=10 000) <span class="info-tip" title="Генерируются случайные L* и d*, затем вычисляются H,K,G,Y. Результат — среднее и 95% ДИ.">?</span></h3>
+      <div id="mcGlobal"><span style="color:var(--text-lt)">Нет данных</span></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-scols">
+    <div class="psec">
+      <h3>Расчёт по каждому сколу</h3>
+      <div id="scolDetailList" style="color:var(--text-lt);font-size:0.78rem">—</div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-charts">
+    <div class="psec"><h3>Гистограмма длин</h3><div class="chart-wrap"><canvas id="histChart"></canvas></div></div>
+    <div class="psec"><h3>Все длины трещин</h3><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
+    <div class="psec"><h3>Средняя L̄ по сколам</h3><div class="chart-wrap"><canvas id="scolChart"></canvas></div></div>
+  </div>
+</div>
+</div>
+
+<script>
+// ═══ CONSTANTS ═══
+const SCOL_COLORS=['#58a6ff','#ff7b72','#3fb950','#e3b341','#d2a8ff','#39d353','#ffa657','#79c0ff'];
+// ═══ STATE ═══
+let isDark=true, currentData=null;
+let manualCracks=[], manualIdCounter=0;
+let manualDList=[], manualDiamList=[];
+// drawMode: 'none' | 'crack' | 'd' | 'diam'
+let drawMode='none', currentPoints=[], mousePos=null, showEmptyScols=true;
+let zoom=1,panX=0,panY=0,isPanning=false,panStart=null,imgNW=0,imgNH=0;
+let histInst=null,barInst=null,scolInst=null;
+let lastLengths=null,lastScolStats=null;
+const f3=v=>(v!=null&&!isNaN(v)?Number(v).toFixed(3):'—');
+const fE=v=>(v!=null&&!isNaN(v)&&v!==0?Number(v).toExponential(3):'—');
+
+// ═══ THEME ═══
+function toggleTheme(){
+  isDark=!isDark;
+  document.documentElement.setAttribute('data-theme',isDark?'dark':'light');
+  document.getElementById('themeBtn').textContent=isDark?'☀ Светлая':'🌙 Тёмная';
+  if(lastLengths)updateCharts(lastLengths,lastScolStats);
+}
+
+// ═══ TABS ═══
+function switchTab(n){
+  ['global','scols','charts'].forEach((t,i)=>{
+    document.querySelectorAll('.tab')[i].classList.toggle('active',t===n);
+    document.getElementById('tab-'+t).classList.toggle('active',t===n);
+  });
+}
+
+// ═══ ANALYZE ═══
+async function send(){
+  const file=document.getElementById('fileInput').files[0];
+  if(!file){showError('Выберите файл');return;}
+  hideError();showLoading('Анализ изображения...');
+  try{
+    const fd=new FormData();
+    fd.append('file',file);
+    fd.append('crossSize',document.getElementById('crossSize').value);
+    fd.append('loadP',document.getElementById('loadP').value);
+    fd.append('minArea',document.getElementById('minArea').value);
+    const data=await(await fetch('/api/analyze',{method:'POST',body:fd})).json();
+    if(data.error){showError(data.error);return;}
+    currentData=data;manualCracks=[];currentPoints=[];
+    displayImage(data.image);
+    renderCrackList();
+    populateScolSelect(data.cracks_by_scol||[]);
+    updateStats(data);
+    updateScolDetail(data.scol_stats||[]);
+    updateCharts(data.crack_lengths,data.scol_stats||[]);
+    document.getElementById('crackListSection').style.display='block';
+  }catch(e){showError('Ошибка: '+e.message);}
+  finally{hideLoading();}
+}
+
+// ═══ IMAGE DISPLAY ═══
+function displayImage(b64){
+  const img=document.getElementById('outputImage');
+  img.src='data:image/jpeg;base64,'+b64;
+  img.style.display='block';
+  document.getElementById('placeholder').style.display='none';
+  img.onload=()=>{imgNW=img.naturalWidth;imgNH=img.naturalHeight;resetZoom();resizeCanvas();};
+}
+function applyTransform(){
+  const t=`scale(${zoom}) translate(${panX}px,${panY}px)`;
+  document.getElementById('outputImage').style.transform=t;
+  document.getElementById('drawCanvas').style.transform=t;
+  document.getElementById('zoomLabel').textContent=Math.round(zoom*100)+'%';
+}
+function resetZoom(){
+  const c=document.getElementById('imageContainer');
+  const s=Math.min(c.clientWidth/imgNW,c.clientHeight/imgNH,1);
+  zoom=s;panX=(c.clientWidth/zoom-imgNW)/2;panY=(c.clientHeight/zoom-imgNH)/2;applyTransform();
+}
+function zoomIn(){zoom=Math.min(zoom*1.25,8);applyTransform();}
+function zoomOut(){zoom=Math.max(zoom*.8,.1);applyTransform();}
+function resizeCanvas(){const cv=document.getElementById('drawCanvas');cv.width=imgNW;cv.height=imgNH;redrawCanvas();}
+function getIC(e){const r=document.getElementById('imageContainer').getBoundingClientRect();return{x:(e.clientX-r.left)/zoom-panX,y:(e.clientY-r.top)/zoom-panY};}
+function onWheel(e){e.preventDefault();zoom=Math.max(.1,Math.min(8,zoom*(e.deltaY<0?1.15:.87)));applyTransform();}
+
+// ═══ DRAW MODE ═══
+function setDrawMode(mode){
+  // toggle off if same
+  if(drawMode===mode){mode='none';}
+  drawMode=mode;
+  currentPoints=[];mousePos=null;
+  ['crack','d','diam'].forEach(m=>{
+    const b=document.getElementById('modeBtn_'+m);
+    if(b)b.classList.toggle('active',m===mode);
+  });
+  const scolRow=document.getElementById('scolSelectRow');
+  scolRow.style.display=(mode==='d'||mode==='diam')?'block':'none';
+  document.getElementById('imageContainer').style.cursor=mode!=='none'?'crosshair':'default';
+  document.getElementById('finishBtn').style.display='none';
+  const hints={
+    none:'Выберите инструмент выше.',
+    crack:'Кликайте для добавления точек ломаной трещины. Двойной клик или «Готово» — завершить.',
+    d:'Кликните начало диагонали отпечатка, затем конец. Двойной клик или «Готово».',
+    diam:'Кликните начало диаметра скола, затем конец. Двойной клик или «Готово».'
+  };
+  document.getElementById('drawHint').textContent=hints[mode]||'';
+  document.getElementById('drawStatus').textContent=mode!=='none'?`Режим: ${mode==='crack'?'трещина':mode==='d'?'диагональ d':'диаметр скола'}`:'';
+}
+
+function onMouseDown(e){
+  if(drawMode!=='none'){
+    const p=getIC(e);
+    currentPoints.push([p.x,p.y]);
+    redrawCanvas();
+    if((drawMode==='d'||drawMode==='diam')&&currentPoints.length>=2){finishDrawing();return;}
+    document.getElementById('finishBtn').style.display=currentPoints.length>=2?'':'none';
+  }else{isPanning=true;panStart={mx:e.clientX,my:e.clientY,px:panX,py:panY};}
+}
+function onMouseMove(e){
+  if(drawMode!=='none'){mousePos=getIC(e);redrawCanvas();}
+  else if(isPanning&&panStart){panX=panStart.px+(e.clientX-panStart.mx)/zoom;panY=panStart.py+(e.clientY-panStart.my)/zoom;applyTransform();}
+}
+function onMouseUp(){isPanning=false;}
+async function onDblClick(e){if(drawMode!=='none'&&currentPoints.length>=2)await finishDrawing();}
+function undoLastPoint(){if(currentPoints.length>0){currentPoints.pop();redrawCanvas();document.getElementById('finishBtn').style.display=currentPoints.length>=2?'':'none';}}
+
+async function finishDrawing(){
+  if(currentPoints.length<2)return;
+  showLoading('Расчёт...');
+  try{
+    if(drawMode==='crack'){
+      const res=await(await fetch('/api/finish_manual_crack',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({points:currentPoints})})).json();
+      manualCracks.push({id:'m'+(++manualIdCounter),points:[...currentPoints],length_um:res.length_um||0,scol_id:res.scol_id||null});
+      renderCrackList();
+    }else if(drawMode==='d'||drawMode==='diam'){
+      const sid=parseInt(document.getElementById('scolSelect').value)||null;
+      const ep=drawMode==='d'?'/api/set_manual_d':'/api/set_manual_diam';
+      const res=await(await fetch(ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scol_id:sid,pts:[currentPoints[0],currentPoints[1]]})})).json();
+      if(res.ok){renderManualDList();renderCrackList();}
+    }
+    currentPoints=[];mousePos=null;
+    redrawCanvas();document.getElementById('finishBtn').style.display='none';
+    await redraw();
+  }catch(e){showError('Ошибка: '+e.message);}
+  finally{hideLoading();}
+}
+
+// ═══ CANVAS ═══
+function redrawCanvas(){
+  const cv=document.getElementById('drawCanvas');if(!cv.width)return;
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);
+  // manual cracks
+  manualCracks.forEach(mc=>{
+    const pts=mc.points;if(pts.length<2)return;
+    const col=mc.scol_id!=null?SCOL_COLORS[(mc.scol_id-1)%SCOL_COLORS.length]:'#e3b341';
+    ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.lineJoin='round';
+    ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
+    ctx.stroke();
+    ctx.fillStyle=col;pts.forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],3,0,Math.PI*2);ctx.fill();});
+    const mid=pts[Math.floor(pts.length/2)];
+    ctx.font='bold 11px JetBrains Mono';ctx.fillText(mc.length_um.toFixed(1)+'*',mid[0]+4,mid[1]-5);
+  });
+  // current polyline
+  if(drawMode!=='none'&&currentPoints.length>0){
+    const colors={crack:'#58a6ff99',d:'#00ddff99',diam:'#c084fc99'};
+    ctx.strokeStyle=colors[drawMode]||'#58a6ff99';
+    ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.lineJoin='round';
+    ctx.beginPath();ctx.moveTo(currentPoints[0][0],currentPoints[0][1]);
+    for(let i=1;i<currentPoints.length;i++)ctx.lineTo(currentPoints[i][0],currentPoints[i][1]);
+    if(mousePos)ctx.lineTo(mousePos.x,mousePos.y);
+    ctx.stroke();ctx.setLineDash([]);
+    const dotColors={crack:'#58a6ff',d:'#00ddff',diam:'#c084fc'};
+    ctx.fillStyle=dotColors[drawMode]||'#58a6ff';
+    currentPoints.forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],3,0,Math.PI*2);ctx.fill();});
+  }
+}
+
+// ═══ SCOL SELECT ═══
+function populateScolSelect(scolList){
+  const sel=document.getElementById('scolSelect');
+  sel.innerHTML='<option value="">— выбрать скол —</option>';
+  scolList.forEach(s=>{
+    const o=document.createElement('option');o.value=s.scol_id;o.textContent='Скол '+s.scol_id;sel.appendChild(o);
+  });
+}
+
+// ═══ CRACK LIST ═══
+function renderCrackList(){
+  const el=document.getElementById('crackList');el.innerHTML='';
+  if(!currentData||!currentData.cracks_by_scol)return;
+  currentData.cracks_by_scol.forEach((scol,si)=>{
+    const color=SCOL_COLORS[si%SCOL_COLORS.length];
+    const isEmpty=scol.cracks.length===0;
+    if(!showEmptyScols&&isEmpty)return;
+    const mf=manualCracks.filter(m=>m.scol_id===scol.scol_id);
+    const div=document.createElement('div');div.className='scol-group';div.id='scolGroup_'+scol.scol_id;
+    if(isEmpty&&!mf.length)div.style.opacity='0.5';
+    div.innerHTML=`
+      <div class="scol-header" onclick="toggleScol(${scol.scol_id})">
+        <span class="scol-dot" style="background:${color}"></span>
+        <span>Скол ${scol.scol_id}</span>
+        <span style="color:var(--text-lt);font-size:0.64rem;margin-left:3px">${scol.cracks.length+mf.length} тр.</span>
+        <button class="scol-hide-btn" onclick="event.stopPropagation();hideScol(${scol.scol_id})">✕</button>
+      </div>
+      <div class="scol-cracks" id="scol_${scol.scol_id}">
+        ${scol.cracks.map(c=>`<div class="crack-item"><input type="checkbox" class="crack-cb" data-id="${c.id}" checked><span style="font-size:0.68rem;color:var(--text-lt)">тр.${c.seg_idx+1}</span><span class="crack-len">${Number(c.length_um).toFixed(3)} мкм</span></div>`).join('')}
+        ${mf.map(mc=>`<div class="crack-item"><span class="crack-manual-badge">✏</span><span style="font-size:0.68rem;color:var(--text-lt)">${mc.id}</span><span class="crack-len" style="color:var(--acc4)">${Number(mc.length_um).toFixed(3)} мкм</span><button class="btn btn-danger btn-sm" style="padding:1px 5px;margin-left:3px" onclick="removeManual('${mc.id}')">✕</button></div>`).join('')}
+      </div>`;
+    el.appendChild(div);
+  });
+  const orphans=manualCracks.filter(m=>m.scol_id==null);
+  if(orphans.length){
+    const div=document.createElement('div');div.className='scol-group';
+    div.innerHTML=`<div class="scol-header" style="opacity:.6" onclick="toggleScol('orphan')"><span class="scol-dot" style="background:var(--text-lt)"></span><span>Без скола</span><span style="color:var(--text-lt);font-size:0.64rem;margin-left:3px">${orphans.length} тр.</span></div><div class="scol-cracks" id="scol_orphan">${orphans.map(mc=>`<div class="crack-item"><span class="crack-manual-badge">✏</span><span style="font-size:0.68rem;color:var(--text-lt)">${mc.id}</span><span class="crack-len" style="color:var(--acc4)">${Number(mc.length_um).toFixed(3)} мкм</span><button class="btn btn-danger btn-sm" style="padding:1px 5px;margin-left:3px" onclick="removeManual('${mc.id}')">✕</button></div>`).join('')}</div>`;
+    el.appendChild(div);
+  }
+}
+
+function renderManualDList(){
+  // Shown inside psec as small info — real rendering via updateScolDetail
+}
+
+function toggleScol(id){const el=document.getElementById('scol_'+id);if(el)el.style.display=el.style.display==='none'?'':'none';}
+function hideScol(id){const el=document.getElementById('scolGroup_'+id);if(el)el.style.display='none';}
+function toggleEmptyScols(){showEmptyScols=!showEmptyScols;document.getElementById('emptyToggleBtn').textContent=showEmptyScols?'Пустые':'+ Пустые';renderCrackList();}
+function getKeptIds(){return Array.from(document.querySelectorAll('.crack-cb:checked')).map(cb=>cb.dataset.id);}
+function selectAll(){document.querySelectorAll('.crack-cb').forEach(cb=>cb.checked=true);}
+function deselectAll(){document.querySelectorAll('.crack-cb').forEach(cb=>cb.checked=false);}
+async function removeSelected(){
+  const kept=getKeptIds();
+  if(!kept.length){showError('Нельзя удалить все трещины!');return;}
+  if(currentData&&currentData.cracks_by_scol)currentData.cracks_by_scol.forEach(s=>{s.cracks=s.cracks.filter(c=>kept.includes(c.id));});
+  renderCrackList();await redraw();
+}
+async function removeManual(id){manualCracks=manualCracks.filter(m=>m.id!==id);renderCrackList();redrawCanvas();await redraw();}
+async function clearManual(){
+  manualCracks=[];currentPoints=[];mousePos=null;
+  // also clear d/diam overrides on server
+  await fetch('/api/set_manual_d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scol_id:null})});
+  await fetch('/api/set_manual_diam',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scol_id:null})});
+  renderCrackList();redrawCanvas();await redraw();
+}
+
+// ═══ REDRAW ═══
+async function redraw(){
+  if(!currentData)return;
+  showLoading('Перерисовка...');
+  try{
+    const body={kept_crack_ids:getKeptIds(),manual_cracks:manualCracks,load_P:parseFloat(document.getElementById('loadP').value)};
+    const result=await(await fetch('/api/redraw',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+    if(result.error){showError(result.error);return;}
+    if(result.image)document.getElementById('outputImage').src='data:image/jpeg;base64,'+result.image;
+    updateStats({crack_lengths:result.crack_lengths,count:result.count,mean_length:result.mean_length,std_length:result.std_length,sem:result.sem,damage_diameter:currentData.damage_diameter,inner_diameter:currentData.inner_diameter,properties:result.properties,mc:result.mc});
+    updateScolDetail(result.scol_stats||[]);
+    updateCharts(result.crack_lengths,result.scol_stats||[]);
+  }catch(e){showError('Ошибка: '+e.message);}
+  finally{hideLoading();}
+}
+
+// ═══ STATS ═══
+function updateStats(data){
+  const lengths=data.crack_lengths||[];
+  const mean=data.mean_length||0,std=data.std_length||0;
+  const sem=data.sem!==undefined?data.sem:(lengths.length>1?+(std/Math.sqrt(lengths.length)).toFixed(3):0);
+  document.getElementById('statCount').textContent=data.count||0;
+  document.getElementById('statMean').innerHTML=f3(mean)+'<span class="stat-unit">мкм</span>';
+  document.getElementById('statStd').innerHTML=f3(std)+'<span class="stat-unit">мкм</span>';
+  document.getElementById('statSem').innerHTML=f3(sem)+'<span class="stat-unit">мкм</span>';
+  const mn=lengths.length?Math.min(...lengths).toFixed(3):'—',mx=lengths.length?Math.max(...lengths).toFixed(3):'—';
+  document.getElementById('statMinMax').innerHTML=`${mn} / ${mx} <span class="stat-unit">мкм</span>`;
+  document.getElementById('statDiam').innerHTML=`${f3(data.damage_diameter)} / ${f3(data.inner_diameter)} <span class="stat-unit">мкм</span>`;
+  const p=data.properties||{};
+  document.getElementById('propsTable').innerHTML=`
+    <tr><td>H — микротвёрдость</td><td>${f3(p.H_GPa)} ГПа</td></tr>
+    <tr><td>K — коэф. интенс. напряжений</td><td>${f3(p.K_MN)} МН·м⁻³⸍²</td></tr>
+    <tr><td>G — энергия разрушения</td><td>${fE(p.G_J)} Дж</td></tr>
+    <tr><td>Y — удельная энергия</td><td>${fE(p.Y_J)} Дж</td></tr>
+    <tr><td>h — глубина трещины</td><td>${f3(p.h_um)} мкм</td></tr>`;
+  document.getElementById('mcGlobal').innerHTML=renderMC(data.mc||{});
+}
+
+function renderMC(mc){
+  if(!mc||!mc.H||!mc.H.mean)return'<span style="color:var(--text-lt)">Нет данных</span>';
+  const row=(lbl,obj,u)=>obj?`<tr><td>${lbl}</td><td>${f3(obj.mean)} ${u}</td><td>[${f3(obj.ci_lo)}, ${f3(obj.ci_hi)}]</td></tr>`:'';
+  return`<table class="mc-table"><thead><tr><th>Параметр</th><th>Среднее</th><th>95% ДИ</th></tr></thead><tbody>
+    ${row('H',mc.H,'ГПа')}${row('K',mc.K,'МН·м⁻³⸍²')}${row('G',mc.G,'Дж')}${row('Y',mc.Y,'Дж')}
+  </tbody></table><div style="font-size:0.63rem;color:var(--text-lt);margin-top:4px">N = ${mc.n_valid||0} итераций</div>`;
+}
+
+function updateScolDetail(scolStats){
+  const el=document.getElementById('scolDetailList');
+  if(!scolStats||!scolStats.length){el.innerHTML='<span style="color:var(--text-lt)">Нет данных</span>';return;}
+  el.innerHTML=scolStats.map(s=>{
+    const col=SCOL_COLORS[(s.scol_id-1)%SCOL_COLORS.length];
+    const p=s.props||{};
+    const dBadge=`<span class="override-badge ${s.d_src==='manual'?'override-manual':'override-auto'}">${s.d_src==='manual'?'ручное':'авто'}</span>`;
+    const diamBadge=`<span class="override-badge ${s.diam_src==='manual'?'override-manual':'override-auto'}">${s.diam_src==='manual'?'ручное':'авто'}</span>`;
+    return`<div class="scol-detail">
+      <div class="scol-detail-hdr" onclick="toggleScolDetail(${s.scol_id})">
+        <span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>
+        Скол ${s.scol_id}
+        <span class="badge badge-blue">${s.count} тр.</span>
+        <span class="badge badge-green" style="margin-left:auto">L̄=${f3(s.mean_l)} мкм</span>
+      </div>
+      <div class="scol-detail-body" id="scolDB_${s.scol_id}">
+        <table class="props-table" style="margin-bottom:9px">
+          <tr><td>L̄ средняя</td><td>${f3(s.mean_l)} мкм</td></tr>
+          <tr><td>σ ст. откл.</td><td>${f3(s.std_l)} мкм</td></tr>
+          <tr><td>Погрешность σ/√n</td><td>${f3(s.sem_l)} мкм</td></tr>
+          <tr><td>Диагональ отпечатка d ${dBadge}</td><td>${f3(s.d_um)} мкм</td></tr>
+          <tr><td>Диаметр скола D ${diamBadge}</td><td>${f3(s.diam_um)} мкм</td></tr>
+          <tr><td>H</td><td>${f3(p.H_GPa)} ГПа</td></tr>
+          <tr><td>K</td><td>${f3(p.K_MN)} МН·м⁻³⸍²</td></tr>
+          <tr><td>G</td><td>${fE(p.G_J)} Дж</td></tr>
+          <tr><td>Y</td><td>${fE(p.Y_J)} Дж</td></tr>
+          <tr><td>h</td><td>${f3(p.h_um)} мкм</td></tr>
+        </table>
+        <div style="font-size:0.69rem;font-weight:700;color:var(--text-dim);margin-bottom:4px">Монте-Карло:</div>
+        ${renderMC(s.mc||{})}
+        <div style="margin-top:7px" class="btn-row">
+          <button class="btn btn-cyan btn-sm" onclick="quickSetD(${s.scol_id})" title="Задать d вручную">📐 d вручную</button>
+          <button class="btn btn-purple btn-sm" onclick="quickSetDiam(${s.scol_id})" title="Задать диаметр вручную">⊙ D вручную</button>
+          <button class="btn btn-danger btn-sm" onclick="clearOverrides(${s.scol_id})">✕ сброс</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleScolDetail(id){const el=document.getElementById('scolDB_'+id);if(el)el.classList.toggle('open');}
+function quickSetD(sid){
+  document.getElementById('scolSelect').value=sid;
+  setDrawMode('d');
+  showError('Теперь нарисуйте линию диагонали на изображении для скола '+sid);
+  setTimeout(hideError,3000);
+}
+function quickSetDiam(sid){
+  document.getElementById('scolSelect').value=sid;
+  setDrawMode('diam');
+  showError('Теперь нарисуйте линию диаметра на изображении для скола '+sid);
+  setTimeout(hideError,3000);
+}
+async function clearOverrides(sid){
+  await fetch('/api/set_manual_d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scol_id:sid,pts:null})});
+  await fetch('/api/set_manual_diam',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scol_id:sid,pts:null})});
+  await redraw();
+}
+
+// ═══ CHARTS ═══
+function updateCharts(lengths,scolStats){
+  lastLengths=lengths;lastScolStats=scolStats;
+  if(!lengths||!lengths.length)return;
+  const grid=isDark?'#2a3352':'#dde3ef',tick=isDark?'#8b949e':'#4a5568';
+  const sc={x:{ticks:{color:tick,font:{size:8,family:'JetBrains Mono'}},grid:{color:grid}},y:{ticks:{color:tick,font:{size:8,family:'JetBrains Mono'}},grid:{color:grid}}};
+  const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:sc};
+  const bins=Math.min(10,Math.max(4,Math.ceil(lengths.length/2)));
+  const mn=Math.min(...lengths),mx=Math.max(...lengths),st=(mx-mn)/bins||1;
+  const hl=[],hc=[];
+  for(let i=0;i<bins;i++){const lo=mn+i*st,hi=mn+(i+1)*st;hl.push(lo.toFixed(0)+'–'+hi.toFixed(0));hc.push(lengths.filter(l=>l>=lo&&l<hi+(i===bins-1?1:0)).length);}
+  if(histInst)histInst.destroy();
+  histInst=new Chart(document.getElementById('histChart'),{type:'bar',data:{labels:hl,datasets:[{data:hc,backgroundColor:'rgba(88,166,255,.28)',borderColor:'#58a6ff',borderWidth:1.5,borderRadius:3}]},options:base});
+  if(barInst)barInst.destroy();
+  barInst=new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:lengths.map((_,i)=>i+1),datasets:[{data:lengths,backgroundColor:lengths.map((_,i)=>SCOL_COLORS[i%SCOL_COLORS.length]+'55'),borderColor:lengths.map((_,i)=>SCOL_COLORS[i%SCOL_COLORS.length]),borderWidth:1.5,borderRadius:2}]},options:{...base,scales:{...sc,y:{...sc.y,title:{display:true,text:'мкм',color:tick,font:{size:9}}}}}});
+  if(scolStats&&scolStats.length){
+    if(scolInst)scolInst.destroy();
+    scolInst=new Chart(document.getElementById('scolChart'),{type:'bar',data:{labels:scolStats.map(s=>'S'+s.scol_id),datasets:[{data:scolStats.map(s=>s.mean_l),backgroundColor:scolStats.map(s=>SCOL_COLORS[(s.scol_id-1)%SCOL_COLORS.length]+'55'),borderColor:scolStats.map(s=>SCOL_COLORS[(s.scol_id-1)%SCOL_COLORS.length]),borderWidth:1.5,borderRadius:3}]},options:{...base,plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:ctx=>{const s=scolStats[ctx.dataIndex];return`σ=${f3(s.std_l)} мкм, d=${f3(s.d_um)} мкм`;}}}}},});
+  }
+}
+
+// ═══ UI ═══
+function showLoading(m){document.getElementById('loadingMsg').textContent=m||'Загрузка...';document.getElementById('loadingOverlay').classList.add('show');}
+function hideLoading(){document.getElementById('loadingOverlay').classList.remove('show');}
+function showError(m){const el=document.getElementById('errorBox');el.style.display='block';el.innerHTML=`<div class="error-msg">⚠ ${m}</div>`;}
+function hideError(){document.getElementById('errorBox').style.display='none';}
+</script>
+</body>
+</html>
