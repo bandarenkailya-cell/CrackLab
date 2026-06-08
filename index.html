@@ -560,7 +560,11 @@ function renderMC(mc){
   if(!mc||!mc.H||!mc.H.mean)return'<span style="color:var(--text-lt)">Нет данных</span>';
   const row=(lbl,obj,u)=>obj?`<tr><td>${lbl}</td><td>${f3(obj.mean)} ${u}</td><td>[${f3(obj.ci_lo)}, ${f3(obj.ci_hi)}]</td></tr>`:'';
   return`<table class="mc-table"><thead><tr><th>Параметр</th><th>Среднее</th><th>95% ДИ</th></tr></thead><tbody>
-    ${row('H',mc.H,'ГПа')}${row('K',mc.K,'МН·м⁻³⸍²')}${row('G',mc.G,'Дж')}${row('Y',mc.Y,'Дж')}
+   ${row('H (микротвёрдость)', mc.H, 'ГПа')}
+${row('K (коэф. вязкости разрушений)', mc.K, 'МН·м⁻³⸍²')}
+${row('G (уд. энергия отслаивания)', mc.G, 'Дж')}
+${row('Y (эфф. энергия разрушения)', mc.Y, 'Дж')}
+${row('E (модуль Юнга)', mc.E || {mean: 0, ci_lo: 0, ci_hi: 0}, 'ГПа')}
   </tbody></table><div style="font-size:0.63rem;color:var(--text-lt);margin-top:4px">N = ${mc.n_valid||0} итераций</div>`;
 }
 
