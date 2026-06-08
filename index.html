@@ -564,7 +564,6 @@ function renderMC(mc){
 ${row('K (коэф. вязкости разрушений)', mc.K, 'МН·м⁻³⸍²')}
 ${row('G (уд. энергия отслаивания)', mc.G, 'Дж')}
 ${row('Y (эфф. энергия разрушения)', mc.Y, 'Дж')}
-${row('E (модуль Юнга)', mc.E || {mean: 0, ci_lo: 0, ci_hi: 0}, 'ГПа')}
   </tbody></table><div style="font-size:0.63rem;color:var(--text-lt);margin-top:4px">N = ${mc.n_valid||0} итераций</div>`;
 }
 
@@ -590,11 +589,11 @@ function updateScolDetail(scolStats){
           <tr><td>Погрешность σ/√n</td><td>${f3(s.sem_l)} мкм</td></tr>
           <tr><td>Диагональ отпечатка d ${dBadge}</td><td>${f3(s.d_um)} мкм</td></tr>
           <tr><td>Диаметр скола D ${diamBadge}</td><td>${f3(s.diam_um)} мкм</td></tr>
-          <tr><td>H</td><td>${f3(p.H_GPa)} ГПа</td></tr>
-          <tr><td>K</td><td>${f3(p.K_MN)} МН·м⁻³⸍²</td></tr>
-          <tr><td>G</td><td>${fE(p.G_J)} Дж</td></tr>
-          <tr><td>Y</td><td>${fE(p.Y_J)} Дж</td></tr>
-          <tr><td>h</td><td>${f3(p.h_um)} мкм</td></tr>
+          <tr><td>H — микротвёрдость</td><td>${f3(p.H_GPa)} ГПа</td></tr>
+<tr><td>K — коэффициент вязкости разрушений</td><td>${f3(p.K_MN)} МН·м⁻³⸍²</td></tr>
+<tr><td>G — удельная энергия отслаивания</td><td>${fE(p.G_J)} Дж</td></tr>
+<tr><td>Y — эффективная энергия разрушения</td><td>${fE(p.Y_J)} Дж</td></tr>
+<tr><td>h — глубина трещины</td><td>${f3(p.h_um)} мкм</td></tr>
         </table>
         <div style="font-size:0.69rem;font-weight:700;color:var(--text-dim);margin-bottom:4px">Монте-Карло:</div>
         ${renderMC(s.mc||{})}
