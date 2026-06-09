@@ -250,11 +250,11 @@ input[type=file]::file-selector-button{background:var(--accent);color:#fff;borde
     <div class="psec">
       <h3>Свойства материала</h3>
       <table class="props-table" id="propsTable">
-        <tr><td>H — микротвёрдость</td><td>—</td></tr>
-        <tr><td>K — коэф. вязкости разрушений</td><td>—</td></tr>
-        <tr><td>G — уд. энергия отслаивания</td><td>—</td></tr>
-        <tr><td>Y — уд. энергия разрушения</td><td>—</td></tr>
-        <tr><td>h — глубина трещины</td><td>—</td></tr>
+        <tr><td>Микротвёрдость (H)</td>
+<tr><td>Коэф. интенсивности напряжений (K)</td>
+<tr><td>Удельная энергия отслаивания (G)</td>
+<tr><td>Эффективная энергия разрушения (Y)</td>
+<tr><td>Глубина трещины (h)</td>
       </table>
     </div>
     <div class="psec">
@@ -548,11 +548,11 @@ function updateStats(data){
   document.getElementById('statDiam').innerHTML=`${f3(data.damage_diameter)} / ${f3(data.inner_diameter)} <span class="stat-unit">мкм</span>`;
   const p=data.properties||{};
   document.getElementById('propsTable').innerHTML=`
-    <tr><td>H — микротвёрдость</td><td>${f3(p.H_GPa)} ГПа</td></tr>
-    <tr><td>K — коэф. вязкости разруш.</td><td>${f3(p.K_MN)} МН·м⁻³⸍²</td></tr>
-    <tr><td>G — уд. энергия отслаивания</td><td>${fE(p.G_J)} Дж</td></tr>
-    <tr><td>Y — уд. энергия разрушения</td><td>${fE(p.Y_J)} Дж</td></tr>
-    <tr><td>h — глубина трещины</td><td>${f3(p.h_um)} мкм</td></tr>`;
+    <tr><td>Микротвёрдость (H)</td><td>${f3(p.H_GPa)} ГПа</td></tr>
+    <tr><td>Коэф. интенсивности напряжений (K)</td><td>${f3(p.K_MN)} МН·м⁻³⸍²</td></tr>
+    <tr><td>Удельная энергия отслаивания (G)</td><td>${fE(p.G_J)} Дж</td></tr>
+    <tr><td>Эффективная энергия разрушения (Y)</td><td>${fE(p.Y_J)} Дж</td></tr>
+    <tr><td>Глубина трещины (h)</td><td>${f3(p.h_um)} мкм</td></tr>`;
   document.getElementById('mcGlobal').innerHTML=renderMC(data.mc||{});
 }
 
@@ -560,10 +560,10 @@ function renderMC(mc){
   if(!mc||!mc.H||!mc.H.mean)return'<span style="color:var(--text-lt)">Нет данных</span>';
   const row=(lbl,obj,u)=>obj?`<tr><td>${lbl}</td><td>${f3(obj.mean)} ${u}</td><td>[${f3(obj.ci_lo)}, ${f3(obj.ci_hi)}]</td></tr>`:'';
   return`<table class="mc-table"><thead><tr><th>Параметр</th><th>Среднее</th><th>95% ДИ</th></tr></thead><tbody>
-   ${row('H (микротвёрдость)', mc.H, 'ГПа')}
-${row('K (коэф. вязкости разрушений)', mc.K, 'МН·м⁻³⸍²')}
-${row('G (уд. энергия отслаивания)', mc.G, 'Дж')}
-${row('Y (эфф. энергия разрушения)', mc.Y, 'Дж')}
+   ${row('Микротвёрдость (H)', mc.H, 'ГПа')}
+${row('Коэф. интенсивности напряжений (K)', mc.K, 'МН·м⁻³⸍²')}
+${row('Удельная энергия отслаивания (G)', mc.G, 'Дж')}
+${row('Эффективная энергия разрушения (Y)', mc.Y, 'Дж')}
   </tbody></table><div style="font-size:0.63rem;color:var(--text-lt);margin-top:4px">N = ${mc.n_valid||0} итераций</div>`;
 }
 
@@ -589,11 +589,11 @@ function updateScolDetail(scolStats){
           <tr><td>Погрешность σ/√n</td><td>${f3(s.sem_l)} мкм</td></tr>
           <tr><td>Диагональ отпечатка d ${dBadge}</td><td>${f3(s.d_um)} мкм</td></tr>
           <tr><td>Диаметр скола D ${diamBadge}</td><td>${f3(s.diam_um)} мкм</td></tr>
-          <tr><td>H — микротвёрдость</td><td>${f3(p.H_GPa)} ГПа</td></tr>
-<tr><td>K — коэффициент вязкости разрушений</td><td>${f3(p.K_MN)} МН·м⁻³⸍²</td></tr>
-<tr><td>G — удельная энергия отслаивания</td><td>${fE(p.G_J)} Дж</td></tr>
-<tr><td>Y — эффективная энергия разрушения</td><td>${fE(p.Y_J)} Дж</td></tr>
-<tr><td>h — глубина трещины</td><td>${f3(p.h_um)} мкм</td></tr>
+          <tr><td>Микротвёрдость (H)</td><td>${f3(p.H_GPa)} ГПа</td></tr>
+<tr><td>Коэф. интенсивности напряжений (K)</td><td>${f3(p.K_MN)} МН·м⁻³⸍²</td></tr>
+<tr><td>Удельная энергия отслаивания (G)</td><td>${fE(p.G_J)} Дж</td></tr>
+<tr><td>Эффективная энергия разрушения (Y)</td><td>${fE(p.Y_J)} Дж</td></tr>
+<tr><td>Глубина трещины (h)</td><td>${f3(p.h_um)} мкм</td></tr>
         </table>
         <div style="font-size:0.69rem;font-weight:700;color:var(--text-dim);margin-bottom:4px">Монте-Карло:</div>
         ${renderMC(s.mc||{})}
